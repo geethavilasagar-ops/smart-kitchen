@@ -1,0 +1,1269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KitchenZero — Restaurant Management System</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<style>
+:root{--bg:#0a0f0d;--card:#111c16;--card2:#0f1a14;--border:#1e3328;--green:#00ff88;--green2:#00cc6a;--amber:#ffb800;--red:#ff4444;--blue:#4488ff;--text:#e8f5ee;--muted:#5a8a6e;}
+*{margin:0;padding:0;box-sizing:border-box;}
+html{scroll-behavior:smooth;}
+body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min-height:100vh;}
+body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse 60% 50% at 20% 20%,rgba(0,255,136,0.04),transparent 70%),radial-gradient(ellipse 40% 60% at 80% 80%,rgba(0,204,106,0.03),transparent 70%);pointer-events:none;z-index:0;}
+body::after{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(0,255,136,0.025) 1px,transparent 1px),linear-gradient(90deg,rgba(0,255,136,0.025) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0;}
+.wrap{position:relative;z-index:1;}
+
+/* SIDEBAR + LAYOUT */
+.layout{display:flex;min-height:100vh;}
+.sidebar{width:220px;background:rgba(10,15,13,0.98);border-right:1px solid var(--border);padding:20px 0;position:fixed;top:0;left:0;height:100vh;z-index:100;display:flex;flex-direction:column;overflow-y:auto;}
+.sidebar-logo{padding:0 18px 20px;border-bottom:1px solid var(--border);margin-bottom:16px;}
+.logo-icon{width:36px;height:36px;background:var(--green);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:18px;animation:glow 2s ease-in-out infinite;margin-bottom:8px;}
+@keyframes glow{0%,100%{box-shadow:0 0 16px rgba(0,255,136,0.4);}50%{box-shadow:0 0 32px rgba(0,255,136,0.8);}}
+.logo-text{font-family:'Bebas Neue';font-size:22px;letter-spacing:2px;color:var(--green);}
+.logo-sub{font-size:10px;color:var(--muted);letter-spacing:2px;text-transform:uppercase;}
+.nav-section{padding:0 12px;margin-bottom:8px;}
+.nav-section-label{font-size:10px;color:var(--muted);letter-spacing:2px;text-transform:uppercase;padding:0 8px;margin-bottom:6px;}
+.nav-item{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:9px;cursor:pointer;transition:all 0.2s;font-size:13px;font-weight:500;color:var(--muted);border:1px solid transparent;margin-bottom:2px;}
+.nav-item:hover{background:rgba(0,255,136,0.06);color:var(--text);}
+.nav-item.active{background:rgba(0,255,136,0.12);border-color:rgba(0,255,136,0.2);color:var(--green);}
+.nav-icon{font-size:16px;width:20px;text-align:center;}
+.sidebar-bottom{margin-top:auto;padding:16px 12px;border-top:1px solid var(--border);}
+.live-indicator{display:flex;align-items:center;gap:7px;font-size:11px;color:var(--green);font-weight:600;}
+.live-dot{width:7px;height:7px;background:var(--green);border-radius:50%;animation:blink 1s ease-in-out infinite;}
+@keyframes blink{0%,100%{opacity:1;}50%{opacity:0.2;}}
+.city-info{font-size:11px;color:var(--muted);margin-top:6px;font-family:'Space Mono';}
+
+/* MAIN CONTENT */
+.main{margin-left:220px;flex:1;}
+.topbar{height:52px;background:rgba(10,15,13,0.97);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 28px;position:sticky;top:0;z-index:99;backdrop-filter:blur(20px);}
+.page-title{font-size:15px;font-weight:700;}
+.page-subtitle{font-size:11px;color:var(--muted);margin-top:1px;}
+.topbar-right{display:flex;align-items:center;gap:10px;}
+.status-pills{display:flex;gap:6px;}
+.pill{font-family:'Space Mono';font-size:10px;padding:3px 9px;border-radius:20px;font-weight:700;}
+.pill-green{background:rgba(0,255,136,0.12);color:var(--green);border:1px solid rgba(0,255,136,0.25);}
+.pill-amber{background:rgba(255,184,0,0.12);color:var(--amber);border:1px solid rgba(255,184,0,0.25);}
+.pill-red{background:rgba(255,68,68,0.12);color:var(--red);border:1px solid rgba(255,68,68,0.25);}
+.refresh-btn{background:var(--green);color:var(--bg);border:none;padding:6px 14px;border-radius:7px;font-family:'DM Sans';font-weight:700;font-size:12px;cursor:pointer;transition:all 0.2s;}
+.refresh-btn:hover{background:var(--green2);}
+
+/* CONTENT AREA */
+.content{padding:24px 28px;display:none;}
+.content.active{display:block;}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+.grid-4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:14px;}
+.col-2{grid-column:span 2;}
+.col-3{grid-column:1/-1;}
+.mb{margin-bottom:14px;}
+
+/* CARDS */
+.card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px;animation:up 0.4s ease both;}
+@keyframes up{from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:translateY(0);}}
+.clabel{font-family:'Space Mono';font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:12px;}
+.card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
+
+/* STAT CARDS */
+.stat-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:18px;animation:up 0.4s ease both;}
+.stat-big{font-family:'Bebas Neue';font-size:44px;line-height:1;}
+.stat-label{font-size:11px;color:var(--muted);margin-top:3px;}
+.stat-change{font-size:11px;font-family:'Space Mono';margin-top:5px;}
+
+/* FORMS */
+.form-group{margin-bottom:14px;}
+.form-label{font-size:11px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;display:block;}
+.form-input{width:100%;background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:9px;padding:10px 13px;color:var(--text);font-family:'DM Sans';font-size:13px;outline:none;transition:border-color 0.2s;}
+.form-input:focus{border-color:var(--green);}
+.form-input::placeholder{color:var(--muted);}
+.form-select{width:100%;background:rgba(10,15,13,0.8);border:1px solid var(--border);border-radius:9px;padding:10px 13px;color:var(--text);font-family:'DM Sans';font-size:13px;outline:none;cursor:pointer;}
+.form-select option{background:#111c16;}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.form-row-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;}
+.btn{border:none;padding:10px 20px;border-radius:9px;font-family:'DM Sans';font-weight:700;font-size:13px;cursor:pointer;transition:all 0.2s;display:inline-flex;align-items:center;gap:7px;}
+.btn-green{background:var(--green);color:var(--bg);}
+.btn-green:hover{background:var(--green2);transform:translateY(-1px);}
+.btn-outline{background:transparent;border:1px solid var(--border);color:var(--text);}
+.btn-outline:hover{border-color:var(--green);color:var(--green);}
+.btn-red{background:rgba(255,68,68,0.15);border:1px solid rgba(255,68,68,0.3);color:var(--red);}
+.btn-red:hover{background:rgba(255,68,68,0.25);}
+.btn:disabled{opacity:0.5;cursor:not-allowed;transform:none!important;}
+
+/* TABLE */
+.table{width:100%;border-collapse:collapse;}
+.table th{font-family:'Space Mono';font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);padding:8px 12px;text-align:left;border-bottom:1px solid var(--border);}
+.table td{padding:11px 12px;border-bottom:1px solid var(--border);font-size:13px;}
+.table tr:last-child td{border-bottom:none;}
+.table tr:hover td{background:rgba(0,255,136,0.03);}
+.table tr.clickable{cursor:pointer;}
+
+/* PROGRESS BARS */
+.prog-bar{height:6px;background:rgba(255,255,255,0.05);border-radius:4px;overflow:hidden;margin-top:4px;}
+.prog-fill{height:100%;border-radius:4px;transition:width 1s ease;}
+
+/* BADGES */
+.badge{display:inline-flex;align-items:center;gap:4px;padding:2px 9px;border-radius:20px;font-size:10px;font-weight:700;font-family:'Space Mono';}
+.b-green{background:rgba(0,255,136,0.12);color:var(--green);border:1px solid rgba(0,255,136,0.25);}
+.b-amber{background:rgba(255,184,0,0.12);color:var(--amber);border:1px solid rgba(255,184,0,0.25);}
+.b-red{background:rgba(255,68,68,0.12);color:var(--red);border:1px solid rgba(255,68,68,0.25);}
+.b-blue{background:rgba(68,136,255,0.12);color:var(--blue);border:1px solid rgba(68,136,255,0.25);}
+
+/* ALERTS */
+.alert{display:flex;align-items:flex-start;gap:12px;padding:12px 14px;border-radius:10px;margin-bottom:8px;border-left:3px solid;}
+.alert.red{background:rgba(255,68,68,0.07);border-color:var(--red);}
+.alert.amber{background:rgba(255,184,0,0.07);border-color:var(--amber);}
+.alert.green{background:rgba(0,255,136,0.07);border-color:var(--green);}
+.alert-icon{font-size:18px;flex-shrink:0;}
+.alert-title{font-size:13px;font-weight:600;margin-bottom:2px;}
+.alert-sub{font-size:11px;color:var(--muted);line-height:1.4;}
+
+/* CHART */
+.chart-wrap{position:relative;}
+
+/* SUCCESS/ERROR TOASTS */
+#toast{position:fixed;bottom:24px;right:24px;z-index:9999;display:flex;flex-direction:column;gap:8px;}
+.toast-item{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:12px 16px;font-size:13px;display:flex;align-items:center;gap:10px;animation:toastIn 0.3s ease;min-width:260px;box-shadow:0 8px 32px rgba(0,0,0,0.4);}
+.toast-item.success{border-color:rgba(0,255,136,0.3);}
+.toast-item.error{border-color:rgba(255,68,68,0.3);}
+@keyframes toastIn{from{opacity:0;transform:translateX(20px);}to{opacity:1;transform:translateX(0);}}
+
+/* MODAL */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,0.85);backdrop-filter:blur(10px);z-index:1000;display:none;align-items:center;justify-content:center;padding:20px;}
+.overlay.open{display:flex;}
+.modal-box{background:var(--card);border:1px solid var(--border);border-radius:18px;padding:26px;width:100%;max-width:500px;animation:mIn 0.3s ease;max-height:90vh;overflow-y:auto;}
+@keyframes mIn{from{opacity:0;transform:scale(0.92)translateY(16px);}to{opacity:1;transform:scale(1)translateY(0);}}
+.modal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;}
+.modal-title{font-family:'Bebas Neue';font-size:26px;color:var(--green);}
+.modal-close{background:none;border:1px solid var(--border);color:var(--muted);width:30px;height:30px;border-radius:7px;cursor:pointer;font-size:14px;transition:all 0.2s;}
+.modal-close:hover{border-color:var(--red);color:var(--red);}
+
+.spinner{display:inline-block;width:13px;height:13px;border:2px solid rgba(0,0,0,0.15);border-top-color:currentColor;border-radius:50%;animation:spin 0.8s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+
+/* STATUS dots */
+.sdot{width:8px;height:8px;border-radius:50%;display:inline-block;animation:blink 1.5s ease-in-out infinite;}
+.sdot.g{background:var(--green);}
+.sdot.a{background:var(--amber);}
+.sdot.r{background:var(--red);}
+
+/* UPLOAD ZONE */
+.upload-zone{border:2px dashed var(--border);border-radius:12px;padding:30px;text-align:center;cursor:pointer;transition:all 0.2s;margin-bottom:14px;}
+.upload-zone:hover,.upload-zone.drag{border-color:var(--green);background:rgba(0,255,136,0.04);}
+.upload-zone input{display:none;}
+
+/* AI Chat */
+.chat-messages{max-height:360px;overflow-y:auto;display:flex;flex-direction:column;gap:10px;padding:4px;}
+.chat-msg{padding:12px 14px;border-radius:12px;font-size:13px;line-height:1.6;max-width:90%;}
+.chat-msg.user{background:rgba(0,255,136,0.1);border:1px solid rgba(0,255,136,0.2);align-self:flex-end;color:var(--text);}
+.chat-msg.ai{background:rgba(0,0,0,0.4);border:1px solid var(--border);align-self:flex-start;color:var(--text);}
+.chat-msg.ai .ai-label{font-size:10px;color:var(--green);font-family:'Space Mono';letter-spacing:1px;margin-bottom:5px;}
+.chat-input-row{display:flex;gap:10px;margin-top:12px;}
+.chat-input{flex:1;background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:9px;padding:10px 14px;color:var(--text);font-family:'DM Sans';font-size:13px;outline:none;transition:border-color 0.2s;}
+.chat-input:focus{border-color:var(--green);}
+.chat-send{background:var(--green);color:var(--bg);border:none;padding:10px 18px;border-radius:9px;font-weight:700;font-size:13px;cursor:pointer;transition:all 0.2s;}
+.chat-send:hover{background:var(--green2);}
+.chat-send:disabled{opacity:0.5;cursor:not-allowed;}
+
+/* Waste log history */
+.log-item{display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid var(--border);}
+.log-item:last-child{border-bottom:none;}
+
+input[type=date]{color-scheme:dark;}
+input[type=number]{-moz-appearance:textfield;}
+input[type=number]::-webkit-outer-spin-button,input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;}
+</style>
+</head>
+<body>
+<div class="wrap">
+<div class="layout">
+
+<!-- SIDEBAR -->
+<div class="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-icon">🍃</div>
+    <div class="logo-text">KitchenZero</div>
+    <div class="logo-sub">Restaurant System</div>
+  </div>
+
+  <div class="nav-section">
+    <div class="nav-section-label">Overview</div>
+    <div class="nav-item active" onclick="showPage('dashboard',this)"><span class="nav-icon">🏠</span> Dashboard</div>
+    <div class="nav-item" onclick="showPage('alerts',this)"><span class="nav-icon">🚨</span> Live Alerts</div>
+  </div>
+
+  <div class="nav-section">
+    <div class="nav-section-label">Predictions</div>
+    <div class="nav-item" onclick="showPage('predict',this)"><span class="nav-icon">🤖</span> Waste Predictor</div>
+    <div class="nav-item" onclick="showPage('weekly',this)"><span class="nav-icon">📅</span> Weekly Forecast</div>
+  </div>
+
+  <div class="nav-section">
+    <div class="nav-section-label">Operations</div>
+    <div class="nav-item" onclick="showPage('orders',this)"><span class="nav-icon">📦</span> Order Manager</div>
+    <div class="nav-item" onclick="showPage('log',this)"><span class="nav-icon">📝</span> Log Actual Waste</div>
+    <div class="nav-item" onclick="showPage('inventory',this)"><span class="nav-icon">🗄️</span> Inventory Input</div>
+    <div class="nav-item" onclick="showPage('upload',this)"><span class="nav-icon">📤</span> Upload CSV Data</div>
+  </div>
+
+  <div class="nav-section">
+    <div class="nav-section-label">Analytics</div>
+    <div class="nav-item" onclick="showPage('history',this)"><span class="nav-icon">📊</span> Waste History</div>
+    <div class="nav-item" onclick="showPage('impact',this)"><span class="nav-icon">🌱</span> Impact Report</div>
+  </div>
+
+  <div class="nav-section">
+    <div class="nav-section-label">AI Assistant</div>
+    <div class="nav-item" onclick="showPage('ai',this)"><span class="nav-icon">💬</span> AI Chat</div>
+  </div>
+
+  <div class="sidebar-bottom">
+    <div class="live-indicator"><div class="live-dot"></div>System Live</div>
+    <div class="city-info" id="city-info">📍 Hyderabad · Port 8000</div>
+    <div style="margin-top:8px;font-size:10px;color:var(--muted);font-family:'Space Mono'" id="last-sync">Syncing...</div>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+<div class="topbar">
+  <div>
+    <div class="page-title" id="page-title">Dashboard</div>
+    <div class="page-subtitle" id="page-subtitle">Live overview — Friday, 27 February 2026</div>
+  </div>
+  <div class="topbar-right">
+    <div class="status-pills">
+      <span class="pill pill-green"><span class="sdot g" style="animation:none"></span> ML Active</span>
+      <span class="pill" id="pill-weather"><span class="sdot a"></span> Weather</span>
+      <span class="pill" id="pill-events"><span class="sdot a"></span> Events</span>
+    </div>
+    <button class="refresh-btn" onclick="loadAll()">↻ Refresh</button>
+  </div>
+</div>
+
+<!-- ═══ DASHBOARD ═══ -->
+<div class="content active" id="page-dashboard">
+  <div class="grid-4 mb">
+    <div class="stat-card" style="animation-delay:0s">
+      <div class="clabel">Today's Waste</div>
+      <div class="stat-big" style="color:var(--red)" id="d-waste">--</div>
+      <div style="font-family:'Bebas Neue';font-size:16px;color:var(--muted)">KG PREDICTED</div>
+      <div class="stat-change" id="d-risk"></div>
+    </div>
+    <div class="stat-card" style="animation-delay:0.05s">
+      <div class="clabel">Savings Today</div>
+      <div class="stat-big" style="color:var(--green)" id="d-saving">₹--</div>
+      <div style="font-size:11px;color:var(--muted)">If orders optimised</div>
+      <div class="stat-change g" id="d-saving-sub" style="color:var(--green)"></div>
+    </div>
+    <div class="stat-card" style="animation-delay:0.1s">
+      <div class="clabel">Weather</div>
+      <div class="stat-big" style="color:var(--amber)" id="d-temp">--°</div>
+      <div style="font-size:11px;color:var(--muted)" id="d-weather-desc">Loading...</div>
+      <div class="stat-change" id="d-humidity" style="color:var(--muted)"></div>
+    </div>
+    <div class="stat-card" style="animation-delay:0.15s">
+      <div class="clabel">CO₂ Impact</div>
+      <div class="stat-big" style="color:#44ddff" id="d-co2">--</div>
+      <div style="font-family:'Bebas Neue';font-size:16px;color:var(--muted)">KG CO₂ TODAY</div>
+      <div class="stat-change" style="color:#44ddff;font-size:11px">From food waste</div>
+    </div>
+  </div>
+
+  <div class="grid-3 mb">
+    <div class="card col-2">
+      <div class="clabel">◈ 7-Day Forecast</div>
+      <div class="chart-wrap" style="height:180px"><canvas id="dashChart"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="clabel">◈ System Status</div>
+      <div id="d-status"></div>
+    </div>
+  </div>
+
+  <div class="grid-3 mb">
+    <div class="card">
+      <div class="card-header">
+        <div class="clabel" style="margin:0">◈ Top Waste Items</div>
+        <button class="btn btn-outline" style="padding:5px 12px;font-size:11px" onclick="showPage('orders',document.querySelector('[onclick*=orders]'))">View Orders →</button>
+      </div>
+      <div id="d-top-items"></div>
+    </div>
+    <div class="card">
+      <div class="card-header">
+        <div class="clabel" style="margin:0">◈ Smart Alerts</div>
+        <span id="alert-count" class="badge b-red"></span>
+      </div>
+      <div id="d-alerts"></div>
+    </div>
+    <div class="card">
+      <div class="clabel">◈ Events Today</div>
+      <div id="d-events"></div>
+    </div>
+  </div>
+
+  <!-- Quick Actions -->
+  <div class="card">
+    <div class="clabel">◈ Quick Actions</div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:4px">
+      <button class="btn btn-green" onclick="showPage('log',document.querySelector('[onclick*=log]'))">📝 Log Today's Waste</button>
+      <button class="btn btn-outline" onclick="showPage('orders',document.querySelector('[onclick*=orders]'))">📦 View Recommended Orders</button>
+      <button class="btn btn-outline" onclick="showPage('predict',document.querySelector('[onclick*=predict]'))">🔮 Run Prediction</button>
+      <button class="btn btn-outline" onclick="showPage('upload',document.querySelector('[onclick*=upload]'))">📤 Upload CSV</button>
+      <button class="btn btn-outline" onclick="showPage('ai',document.querySelector('[onclick*=ai]'))">🤖 Ask AI</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ LIVE ALERTS ═══ -->
+<div class="content" id="page-alerts">
+  <div class="grid-2">
+    <div class="card col-2">
+      <div class="clabel">◈ Active Alerts — Real-Time Monitoring</div>
+      <div id="full-alerts"></div>
+    </div>
+    <div class="card">
+      <div class="clabel">◈ Weather Conditions</div>
+      <div id="alert-weather"></div>
+    </div>
+    <div class="card">
+      <div class="clabel">◈ Nearby Events Impact</div>
+      <div id="alert-events"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ WASTE PREDICTOR ═══ -->
+<div class="content" id="page-predict">
+  <div class="grid-3">
+    <div class="card col-2">
+      <div class="clabel">◈ Waste Prediction Agent — Enter Parameters</div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Prediction Date</label>
+          <input type="date" class="form-input" id="pred-date"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Day Type</label>
+          <select class="form-select" id="pred-daytype">
+            <option value="weekday">Weekday</option>
+            <option value="weekend">Weekend</option>
+            <option value="holiday">Holiday / Festival</option>
+            <option value="event">Event Day</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Expected Covers (customers)</label>
+          <input type="number" class="form-input" id="pred-covers" placeholder="e.g. 150"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Special Menu?</label>
+          <select class="form-select" id="pred-menu">
+            <option value="regular">Regular Menu</option>
+            <option value="buffet">Buffet</option>
+            <option value="special">Special Occasion</option>
+            <option value="reduced">Reduced Menu</option>
+          </select>
+        </div>
+      </div>
+      <div style="display:flex;gap:10px;margin-top:6px">
+        <button class="btn btn-green" id="pred-btn" onclick="runPrediction()">⚡ Run Prediction</button>
+        <button class="btn btn-outline" onclick="document.getElementById('pred-result').style.display='none'">✕ Clear</button>
+      </div>
+      <div id="pred-result" style="display:none;margin-top:18px;padding:18px;background:rgba(0,255,136,0.06);border:1px solid rgba(0,255,136,0.2);border-radius:12px">
+        <div style="display:flex;align-items:baseline;gap:10px;margin-bottom:14px">
+          <div style="font-family:'Bebas Neue';font-size:64px;color:var(--green);line-height:1" id="pred-waste">--</div>
+          <div style="font-family:'Bebas Neue';font-size:24px;color:var(--muted)">KG</div>
+          <div id="pred-badge" style="margin-left:10px"></div>
+        </div>
+        <div id="pred-date-label" style="font-size:12px;color:var(--muted);margin-bottom:14px"></div>
+        <div id="pred-items" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px"></div>
+      </div>
+    </div>
+
+    <div>
+      <div class="card mb">
+        <div class="clabel">◈ Model Performance</div>
+        <div class="form-group" style="margin-bottom:10px">
+          <div style="display:flex;justify-content:space-between;margin-bottom:5px;font-size:12px"><span style="color:var(--muted)">R² Score</span><span style="color:var(--green);font-family:'Space Mono'">0.515</span></div>
+          <div class="prog-bar"><div class="prog-fill" style="width:51.5%;background:var(--green)"></div></div>
+        </div>
+        <div class="form-group" style="margin-bottom:10px">
+          <div style="display:flex;justify-content:space-between;margin-bottom:5px;font-size:12px"><span style="color:var(--muted)">Accuracy</span><span style="color:var(--amber);font-family:'Space Mono'">~82%</span></div>
+          <div class="prog-bar"><div class="prog-fill" style="width:82%;background:var(--amber)"></div></div>
+        </div>
+        <div style="font-size:11px;color:var(--muted);line-height:1.5;margin-top:8px">Regression model trained on Hyderabad restaurant data. Accuracy improves with more CSV uploads.</div>
+      </div>
+      <div class="card">
+        <div class="clabel">◈ Factors Weighting</div>
+        <div id="factors-weight">
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);font-size:12px"><span style="color:var(--muted)">Historical Sales</span><span style="font-family:'Space Mono';color:var(--green)">45%</span></div>
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);font-size:12px"><span style="color:var(--muted)">Weather</span><span style="font-family:'Space Mono';color:var(--amber)">25%</span></div>
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);font-size:12px"><span style="color:var(--muted)">Local Events</span><span style="font-family:'Space Mono';color:var(--amber)">20%</span></div>
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;font-size:12px"><span style="color:var(--muted)">Day of Week</span><span style="font-family:'Space Mono';color:var(--blue)">10%</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ WEEKLY FORECAST ═══ -->
+<div class="content" id="page-weekly">
+  <div class="card col-3 mb">
+    <div class="card-header">
+      <div class="clabel" style="margin:0">◈ 7-Day Waste Forecast — Animated Chart</div>
+      <div style="font-family:'Space Mono';font-size:10px;color:var(--muted)" id="weekly-ts"></div>
+    </div>
+    <div class="chart-wrap" style="height:250px;margin-top:14px"><canvas id="weeklyChart"></canvas></div>
+  </div>
+  <div class="card">
+    <div class="clabel">◈ Daily Breakdown</div>
+    <div id="weekly-table"></div>
+  </div>
+</div>
+
+<!-- ═══ ORDER MANAGER ═══ -->
+<div class="content" id="page-orders">
+  <div class="card mb">
+    <div class="card-header">
+      <div>
+        <div class="clabel" style="margin:0">◈ Order Recommendation Engine — Today</div>
+        <div style="font-size:12px;color:var(--muted);margin-top:3px">Based on ML prediction + weather + events. Click any item to edit order quantity.</div>
+      </div>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-outline" onclick="printOrders()" style="font-size:12px;padding:7px 14px">🖨️ Print Orders</button>
+        <button class="btn btn-green" onclick="confirmAllOrders()" style="font-size:12px;padding:7px 14px">✅ Confirm All Orders</button>
+      </div>
+    </div>
+    <div id="orders-table"></div>
+  </div>
+  <div class="grid-3">
+    <div class="stat-card">
+      <div class="clabel">Total Savings Today</div>
+      <div class="stat-big" style="color:var(--green)" id="ord-saving">₹--</div>
+      <div style="font-size:11px;color:var(--muted)">By following recommendations</div>
+    </div>
+    <div class="stat-card">
+      <div class="clabel">High Priority Items</div>
+      <div class="stat-big" style="color:var(--red)" id="ord-high">--</div>
+      <div style="font-size:11px;color:var(--muted)">Need immediate attention</div>
+    </div>
+    <div class="card">
+      <div class="clabel">◈ Waste vs Recommended</div>
+      <div class="chart-wrap" style="height:140px"><canvas id="ordChart"></canvas></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ LOG ACTUAL WASTE ═══ -->
+<div class="content" id="page-log">
+  <div class="grid-2">
+    <div class="card">
+      <div class="clabel">◈ Log Today's Actual Waste</div>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:16px">Record real waste to compare with predictions and improve model accuracy.</div>
+      <div class="form-group">
+        <label class="form-label">Date</label>
+        <input type="date" class="form-input" id="log-date"/>
+      </div>
+      <div id="log-items-form">
+        <div style="font-size:12px;color:var(--muted);margin-bottom:10px">Enter actual waste for each ingredient:</div>
+        <!-- Filled dynamically -->
+      </div>
+      <div class="form-group">
+        <label class="form-label">Notes (optional)</label>
+        <textarea class="form-input" id="log-notes" rows="2" placeholder="e.g. Dinner rush was slower than expected..."></textarea>
+      </div>
+      <div style="display:flex;gap:10px;margin-top:4px">
+        <button class="btn btn-green" onclick="saveWasteLog()">💾 Save Waste Log</button>
+        <button class="btn btn-outline" onclick="clearLogForm()">✕ Clear</button>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header">
+        <div class="clabel" style="margin:0">◈ Waste Log History</div>
+        <button class="btn btn-red" style="font-size:11px;padding:5px 10px" onclick="clearAllLogs()">Clear All</button>
+      </div>
+      <div id="log-history">
+        <div style="color:var(--muted);font-size:12px;padding:16px;text-align:center">No logs yet. Start logging daily waste!</div>
+      </div>
+    </div>
+    <div class="card col-2" id="accuracy-card" style="display:none">
+      <div class="clabel">◈ Prediction Accuracy — Predicted vs Actual</div>
+      <div class="chart-wrap" style="height:180px"><canvas id="accChart"></canvas></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ INVENTORY INPUT ═══ -->
+<div class="content" id="page-inventory">
+  <div class="grid-2">
+    <div class="card">
+      <div class="clabel">◈ Current Inventory Input</div>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:16px">Enter current stock levels. System will flag items at risk of over-ordering.</div>
+      <div id="inventory-form"></div>
+      <button class="btn btn-green" onclick="saveInventory()" style="margin-top:8px">💾 Save Inventory</button>
+    </div>
+    <div class="card">
+      <div class="clabel">◈ Stock Risk Analysis</div>
+      <div id="stock-analysis">
+        <div style="color:var(--muted);font-size:12px;padding:16px;text-align:center">Save inventory to see risk analysis</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ UPLOAD CSV ═══ -->
+<div class="content" id="page-upload">
+  <div class="grid-2">
+    <div class="card">
+      <div class="clabel">◈ Upload Sales Data CSV</div>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:16px">Upload your restaurant's historical sales data to improve prediction accuracy.</div>
+      <div class="upload-zone" id="upload-zone" onclick="document.getElementById('csv-file').click()" ondragover="e=>e.preventDefault()" ondrop="handleDrop(event)">
+        <input type="file" id="csv-file" accept=".csv" onchange="handleFileSelect(event)"/>
+        <div style="font-size:32px;margin-bottom:10px">📂</div>
+        <div style="font-size:14px;font-weight:600;margin-bottom:4px">Drop CSV file here or click to browse</div>
+        <div style="font-size:12px;color:var(--muted)">Supports: restaurant_sales_data.csv</div>
+      </div>
+      <div id="upload-preview" style="display:none;margin-bottom:14px;padding:12px;background:rgba(0,255,136,0.06);border:1px solid rgba(0,255,136,0.2);border-radius:10px;font-size:12px"></div>
+      <button class="btn btn-green" id="upload-btn" onclick="uploadCSV()" disabled>📤 Upload to Server</button>
+    </div>
+    <div class="card">
+      <div class="clabel">◈ CSV Format Guide</div>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:12px">Your CSV should have these columns:</div>
+      <table class="table" style="font-size:11px">
+        <tr><th>Column</th><th>Example</th></tr>
+        <tr><td style="color:var(--green)">date</td><td style="color:var(--muted)">2026-02-27</td></tr>
+        <tr><td style="color:var(--green)">item</td><td style="color:var(--muted)">Chicken</td></tr>
+        <tr><td style="color:var(--green)">quantity_ordered</td><td style="color:var(--muted)">12.5</td></tr>
+        <tr><td style="color:var(--green)">quantity_wasted</td><td style="color:var(--muted)">2.3</td></tr>
+        <tr><td style="color:var(--muted)">weather_temp</td><td style="color:var(--muted)">31 (optional)</td></tr>
+        <tr><td style="color:var(--muted)">event_nearby</td><td style="color:var(--muted)">1/0 (optional)</td></tr>
+      </table>
+      <div style="margin-top:14px;padding:10px;background:rgba(255,184,0,0.07);border:1px solid rgba(255,184,0,0.2);border-radius:8px;font-size:11px;color:var(--amber)">
+        💡 More data = better predictions. Upload at least 30 days for meaningful accuracy.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ WASTE HISTORY ═══ -->
+<div class="content" id="page-history">
+  <div class="card mb">
+    <div class="card-header">
+      <div class="clabel" style="margin:0">◈ Waste Log History — All Records</div>
+      <div style="display:flex;gap:8px">
+        <input type="month" class="form-input" id="hist-month" style="padding:6px 10px;font-size:12px;width:auto"/>
+        <button class="btn btn-outline" onclick="filterHistory()" style="font-size:12px;padding:6px 12px">Filter</button>
+      </div>
+    </div>
+    <div id="history-table">
+      <div style="color:var(--muted);font-size:12px;padding:20px;text-align:center">No waste logs yet. Log actual waste daily to see history here.</div>
+    </div>
+  </div>
+  <div class="card" id="hist-chart-card" style="display:none">
+    <div class="clabel">◈ Predicted vs Actual Waste — Historical Comparison</div>
+    <div class="chart-wrap" style="height:200px"><canvas id="histChart"></canvas></div>
+  </div>
+</div>
+
+<!-- ═══ IMPACT REPORT ═══ -->
+<div class="content" id="page-impact">
+  <div class="card mb" style="background:linear-gradient(135deg,rgba(0,255,136,0.07),rgba(0,204,106,0.02));border-color:rgba(0,255,136,0.2)">
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
+      <div>
+        <div class="clabel">◈ Waste Reduction Impact Report</div>
+        <div style="font-family:'Bebas Neue';font-size:28px;color:var(--green)">KitchenZero — Hyderabad Restaurant</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:2px" id="impact-date"></div>
+      </div>
+      <button class="btn btn-outline" onclick="window.print()">🖨️ Print Report</button>
+    </div>
+  </div>
+  <div class="grid-4 mb">
+    <div class="stat-card"><div class="clabel">Daily Waste</div><div class="stat-big" style="color:var(--red)" id="imp-waste">--</div><div style="font-family:'Bebas Neue';font-size:14px;color:var(--muted)">KG</div></div>
+    <div class="stat-card"><div class="clabel">Savings Today</div><div class="stat-big" style="color:var(--green)" id="imp-saving">₹--</div></div>
+    <div class="stat-card"><div class="clabel">Monthly Projection</div><div class="stat-big" style="color:var(--amber)" id="imp-monthly">₹--</div></div>
+    <div class="stat-card"><div class="clabel">CO₂ Footprint</div><div class="stat-big" style="color:#44ddff" id="imp-co2">--</div><div style="font-family:'Bebas Neue';font-size:14px;color:var(--muted)">KG CO₂</div></div>
+  </div>
+  <div class="grid-3">
+    <div class="card col-2">
+      <div class="clabel">◈ Ingredient Analysis</div>
+      <div id="imp-ingredients"></div>
+    </div>
+    <div class="card">
+      <div class="clabel">◈ All Deliverables</div>
+      <div id="imp-deliverables"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ AI CHAT ═══ -->
+<div class="content" id="page-ai">
+  <div class="grid-3">
+    <div class="card col-2">
+      <div class="clabel">◈ AI Kitchen Assistant — Ask Anything About Your Waste Data</div>
+      <div class="chat-messages" id="chat-msgs">
+        <div class="chat-msg ai">
+          <div class="ai-label">KITCHENZERO AI</div>
+          Hello! I'm your Kitchen Waste AI. I have access to your live data — today's predictions, weather, events, and waste history. Ask me anything like:<br><br>
+          • "Which ingredient should I reduce today?"<br>
+          • "How does rain affect our waste?"<br>
+          • "What's my biggest saving opportunity this week?"<br>
+          • "Give me a meal plan to use excess inventory"
+        </div>
+      </div>
+      <div class="chat-input-row">
+        <input type="text" class="chat-input" id="chat-input" placeholder="Ask about your kitchen waste..." onkeydown="if(event.key==='Enter')sendChat()"/>
+        <button class="chat-send" id="chat-send" onclick="sendChat()">Send ↗</button>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px" id="quick-questions">
+        <button class="btn btn-outline" style="font-size:11px;padding:5px 10px" onclick="askQuick('Which ingredient has the highest waste today?')">Top waste item?</button>
+        <button class="btn btn-outline" style="font-size:11px;padding:5px 10px" onclick="askQuick('What is my total savings opportunity today and how do I achieve it?')">Savings plan?</button>
+        <button class="btn btn-outline" style="font-size:11px;padding:5px 10px" onclick="askQuick('How does today`s weather affect food spoilage in our kitchen?')">Weather impact?</button>
+        <button class="btn btn-outline" style="font-size:11px;padding:5px 10px" onclick="askQuick('Give me a recipe or meal idea to use up excess Chicken today')">Use excess stock?</button>
+      </div>
+    </div>
+    <div>
+      <div class="card mb">
+        <div class="clabel">◈ Context Loaded</div>
+        <div style="font-size:12px;color:var(--muted);line-height:1.7">AI has access to:<br>
+          ✅ Today's waste prediction<br>
+          ✅ All ingredient forecasts<br>
+          ✅ Live weather data<br>
+          ✅ Nearby events<br>
+          ✅ Your waste log history<br>
+          ✅ Order recommendations
+        </div>
+      </div>
+      <div class="card">
+        <div class="clabel">◈ Live Context</div>
+        <div id="ai-context" style="font-size:12px;color:var(--muted);line-height:1.8"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</div><!-- /main -->
+</div><!-- /layout -->
+</div><!-- /wrap -->
+
+<!-- Edit Order Modal -->
+<div class="overlay" id="order-modal" onclick="if(event.target===this)this.classList.remove('open')">
+  <div class="modal-box">
+    <div class="modal-header">
+      <div class="modal-title" id="om-title">Edit Order</div>
+      <button class="modal-close" onclick="document.getElementById('order-modal').classList.remove('open')">✕</button>
+    </div>
+    <div class="form-group"><label class="form-label">Item</label><input class="form-input" id="om-item" readonly/></div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Predicted Waste (kg)</label><input class="form-input" id="om-waste" readonly/></div>
+      <div class="form-group"><label class="form-label">AI Recommended Order (kg)</label><input class="form-input" id="om-recommended" readonly/></div>
+    </div>
+    <div class="form-group"><label class="form-label">Your Order Quantity (kg) — Edit This</label><input type="number" class="form-input" id="om-custom" step="0.1"/></div>
+    <div class="form-group"><label class="form-label">Reason for change (optional)</label><input class="form-input" id="om-reason" placeholder="e.g. Expected more customers today"/></div>
+    <div style="display:flex;gap:10px;margin-top:4px">
+      <button class="btn btn-green" onclick="saveOrderEdit()">✅ Confirm Order</button>
+      <button class="btn btn-outline" onclick="document.getElementById('order-modal').classList.remove('open')">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div id="toast"></div>
+
+<script>
+const API = 'http://127.0.0.1:8000';
+let allPreds=[], todayData={}, weatherData={}, eventsData=[], weekData=[];
+let wasteLog = JSON.parse(localStorage.getItem('wasteLog')||'[]');
+let inventoryData = JSON.parse(localStorage.getItem('inventory')||'{}');
+let confirmedOrders = JSON.parse(localStorage.getItem('confirmedOrders')||'{}');
+let currentOrderItem = null;
+let accChartInst=null, histChartInst=null, dashChartInst=null, weeklyChartInst=null, ordChartInst=null;
+
+// ── NAVIGATION ──
+function showPage(id, btn) {
+  document.querySelectorAll('.content').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(b=>b.classList.remove('active'));
+  document.getElementById('page-'+id).classList.add('active');
+  if(btn) btn.classList.add('active');
+  const titles = {
+    dashboard:'Dashboard',alerts:'Live Alerts',predict:'Waste Predictor',
+    weekly:'Weekly Forecast',orders:'Order Manager',log:'Log Actual Waste',
+    inventory:'Inventory Input',upload:'Upload CSV Data',
+    history:'Waste History',impact:'Impact Report',ai:'AI Chat'
+  };
+  const subs = {
+    dashboard:'Live overview of your kitchen waste today',
+    alerts:'Real-time alerts and warnings',
+    predict:'ML-powered waste prediction agent',
+    weekly:'7-day waste forecast using regression model',
+    orders:'Optimised order quantities to minimise waste',
+    log:'Record actual waste to improve predictions',
+    inventory:'Input current stock levels',
+    upload:'Upload CSV to retrain the model',
+    history:'Historical waste data and trends',
+    impact:'Waste reduction impact and savings report',
+    ai:'AI assistant for kitchen waste advice'
+  };
+  document.getElementById('page-title').textContent = titles[id]||id;
+  document.getElementById('page-subtitle').textContent = subs[id]||'';
+  if(id==='log') renderLogForm();
+  if(id==='inventory') renderInventoryForm();
+  if(id==='history') renderHistory();
+  if(id==='impact') renderImpact();
+  if(id==='weekly' && weekData.length) renderWeeklyChart();
+}
+
+// ── FETCH ──
+async function get(path){const r=await fetch(API+path);if(!r.ok)throw new Error(r.status);return r.json();}
+
+// ── TOAST ──
+function toast(msg, type='success') {
+  const t = document.createElement('div');
+  t.className = `toast-item ${type}`;
+  t.innerHTML = `<span>${type==='success'?'✅':'❌'}</span><span>${msg}</span>`;
+  document.getElementById('toast').appendChild(t);
+  setTimeout(()=>t.remove(), 3500);
+}
+
+// ── LOAD TODAY ──
+async function loadToday() {
+  try {
+    const d = await get('/predict/today');
+    todayData = d;
+    allPreds = d.predictions||[];
+    const waste = parseFloat(d.total_waste_kg||d.predicted_waste_kg||0).toFixed(1);
+    const risk = d.risk_level||'MED';
+    const saving = allPreds.reduce((s,p)=>s+(p.cost_saving||0),0).toFixed(0);
+    const co2 = (parseFloat(waste)*2.5).toFixed(1);
+
+    document.getElementById('d-waste').textContent = waste;
+    document.getElementById('d-risk').innerHTML = `<span class="badge ${risk==='HIGH'?'b-red':risk==='LOW'?'b-green':'b-amber'}">${risk} RISK</span>`;
+    document.getElementById('d-saving').textContent = '₹'+saving;
+    document.getElementById('d-saving-sub').textContent = allPreds.length+' items optimisable';
+    document.getElementById('d-co2').textContent = co2;
+
+    // Status
+    document.getElementById('d-status').innerHTML = `
+      <div class="log-item"><span class="sdot g" style="margin-right:6px"></span><div><div style="font-size:13px">ML Model</div><div style="font-size:11px;color:var(--muted)">Regression active · R²=0.515</div></div><span class="badge b-green" style="margin-left:auto">ACTIVE</span></div>
+      <div class="log-item"><span class="sdot g" style="margin-right:6px" id="ws-dot"></span><div><div style="font-size:13px">Weather Feed</div><div style="font-size:11px;color:var(--muted)" id="ws-sub">Connecting...</div></div><span class="badge b-amber" id="ws-badge">LOADING</span></div>
+      <div class="log-item"><span class="sdot g" style="margin-right:6px" id="ev-dot"></span><div><div style="font-size:13px">Events Feed</div><div style="font-size:11px;color:var(--muted)" id="ev-sub">Connecting...</div></div><span class="badge b-amber" id="ev-badge">LOADING</span></div>
+      <div class="log-item"><span class="sdot g" style="margin-right:6px"></span><div><div style="font-size:13px">Data Source</div><div style="font-size:11px;color:var(--muted)">${d.data_source||'CSV loaded'}</div></div><span class="badge b-green">CSV</span></div>`;
+
+    // Top items
+    if(allPreds.length) {
+      const max = Math.max(...allPreds.map(p=>p.predicted_waste_kg));
+      document.getElementById('d-top-items').innerHTML = allPreds.slice(0,5).map(p=>{
+        const pct = Math.round((p.predicted_waste_kg/max)*100);
+        const col = pct>70?'var(--red)':pct>40?'var(--amber)':'var(--green)';
+        return `<div style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--border)">
+          <span style="font-size:13px;font-weight:500;width:90px;flex-shrink:0">${p.item}</span>
+          <div class="prog-bar" style="flex:1"><div class="prog-fill" style="width:${pct}%;background:${col}"></div></div>
+          <span style="font-family:'Space Mono';font-size:11px;color:${col};flex-shrink:0">${p.predicted_waste_kg}kg</span>
+        </div>`;
+      }).join('');
+      renderAlerts(allPreds, waste, risk);
+      renderOrders(allPreds);
+      renderLogForm();
+      renderInventoryForm();
+      renderImpact();
+      updateAIContext();
+    }
+    document.getElementById('last-sync').textContent = 'Synced: '+new Date().toLocaleTimeString('en-IN');
+  } catch(e) {
+    document.getElementById('d-waste').textContent='ERR';
+    toast('Cannot connect to API. Is server running?', 'error');
+  }
+}
+
+// ── WEATHER ──
+async function loadWeather() {
+  try {
+    const d = await get('/weather');
+    weatherData = d;
+    const t=d.temperature||d.temp||'--', h=d.humidity||'--', desc=d.description||d.condition||'Clear';
+    document.getElementById('d-temp').textContent = t+'°';
+    document.getElementById('d-weather-desc').textContent = desc;
+    document.getElementById('d-humidity').textContent = 'Humidity: '+h+'%';
+    if(document.getElementById('ws-badge')) {
+      document.getElementById('ws-badge').className='badge b-green';
+      document.getElementById('ws-badge').textContent='LIVE';
+      document.getElementById('ws-sub').textContent=t+'°C · '+h+'% humidity';
+    }
+    document.getElementById('pill-weather').innerHTML='<span class="sdot g" style="animation:none"></span> '+t+'°C';
+    document.getElementById('pill-weather').className='pill pill-green';
+
+    document.getElementById('alert-weather').innerHTML = `
+      <div style="display:flex;align-items:center;gap:14px;margin-bottom:16px">
+        <div style="font-size:42px">${String(desc).toLowerCase().includes('rain')?'🌧️':String(desc).toLowerCase().includes('cloud')?'⛅':t>35?'☀️':'🌤️'}</div>
+        <div><div style="font-family:'Bebas Neue';font-size:42px;color:var(--amber);line-height:1">${t}°</div><div style="font-size:12px;color:var(--muted)">${desc}</div></div>
+      </div>
+      <div class="prog-bar" style="margin-bottom:8px"><div class="prog-fill" style="width:${h}%;background:${h>70?'var(--red)':'var(--amber)'}"></div></div>
+      <div style="font-size:11px;color:var(--muted)">Humidity: ${h}% · ${h>70?'⚠️ High — check cold storage':'✅ Normal range'}</div>
+      <div style="margin-top:12px;font-size:12px;color:var(--text);line-height:1.6">${t>33?'🌡️ High heat alert: Proteins and leafy greens spoil 30-50% faster. Reduce prep batch sizes immediately.':h>70?'💧 High humidity: Moisture-sensitive items at risk. Check refrigeration seals.':'✅ Conditions are moderate. Standard food safety protocols apply.'}</div>`;
+  } catch(e) {
+    if(document.getElementById('ws-badge')) {
+      document.getElementById('ws-badge').className='badge b-amber';
+      document.getElementById('ws-badge').textContent='FALLBACK';
+    }
+  }
+}
+
+// ── EVENTS ──
+async function loadEvents() {
+  try {
+    const d = await get('/events');
+    eventsData = d.events||d||[];
+    const html = eventsData.length ? eventsData.slice(0,4).map(ev=>{
+      const name=ev.name||ev.title||'Local Event', loc=ev.location||ev.venue||'Hyderabad', imp=ev.impact||ev.waste_impact||'Medium';
+      const cls=imp.toLowerCase().includes('high')?'ih':imp.toLowerCase().includes('low')?'il':'im';
+      const bcls=imp.toLowerCase().includes('high')?'b-red':imp.toLowerCase().includes('low')?'b-green':'b-amber';
+      return `<div style="display:flex;align-items:flex-start;gap:10px;padding:10px 0;border-bottom:1px solid var(--border)">
+        <div style="width:8px;height:8px;border-radius:50%;background:var(--green);margin-top:4px;flex-shrink:0"></div>
+        <div style="flex:1"><div style="font-size:13px;font-weight:500">${name}</div><div style="font-size:11px;color:var(--muted)">📍 ${loc}</div></div>
+        <span class="badge ${bcls}">${imp}</span>
+      </div>`;
+    }).join('') : '<div style="color:var(--muted);font-size:12px;padding:10px 0">No events today</div>';
+    document.getElementById('d-events').innerHTML = html;
+    document.getElementById('alert-events').innerHTML = html;
+    if(document.getElementById('ev-badge')) {
+      document.getElementById('ev-badge').className='badge b-green';
+      document.getElementById('ev-badge').textContent='LIVE';
+      document.getElementById('ev-sub').textContent=eventsData.length+' events nearby';
+    }
+    document.getElementById('pill-events').innerHTML='<span class="sdot g" style="animation:none"></span> '+eventsData.length+' Events';
+    document.getElementById('pill-events').className='pill pill-green';
+  } catch(e) {
+    if(document.getElementById('ev-badge')) {
+      document.getElementById('ev-badge').className='badge b-amber';
+      document.getElementById('ev-badge').textContent='FALLBACK';
+    }
+  }
+}
+
+// ── WEEK ──
+async function loadWeek() {
+  try {
+    const d = await get('/predict/week');
+    weekData = d.predictions||d.week||d||[];
+    renderDashChart(weekData);
+    renderWeeklyChart();
+    document.getElementById('weekly-ts').textContent = 'Updated: '+new Date().toLocaleTimeString('en-IN');
+  } catch(e){}
+}
+
+function renderDashChart(preds) {
+  if(dashChartInst) dashChartInst.destroy();
+  const DAYS=['SUN','MON','TUE','WED','THU','FRI','SAT'];
+  const today=new Date().getDay();
+  const labels=preds.slice(0,7).map((p,i)=>p.day||(i===0?'TODAY':DAYS[(today+i)%7]));
+  const vals=preds.slice(0,7).map(p=>parseFloat(p.total_waste_kg||p.predicted_waste_kg||0));
+  const ctx=document.getElementById('dashChart').getContext('2d');
+  dashChartInst=new Chart(ctx,{type:'line',data:{labels,datasets:[{label:'Predicted Waste (kg)',data:vals,borderColor:'#00ff88',backgroundColor:'rgba(0,255,136,0.08)',fill:true,tension:0.4,pointBackgroundColor:'#00ff88',pointRadius:4}]},
+  options:{responsive:true,maintainAspectRatio:false,animation:{duration:1000},plugins:{legend:{display:false},tooltip:{backgroundColor:'#111c16',borderColor:'rgba(0,255,136,0.3)',borderWidth:1,titleColor:'#00ff88',bodyColor:'#e8f5ee',callbacks:{label:c=>` ${c.parsed.y.toFixed(1)} kg`}}},scales:{x:{grid:{color:'rgba(255,255,255,0.03)'},ticks:{color:'#5a8a6e',font:{family:'Space Mono',size:9}}},y:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#5a8a6e',font:{size:9},callback:v=>v+'kg'}}}}});
+}
+
+function renderWeeklyChart() {
+  if(!weekData.length) return;
+  if(weeklyChartInst) weeklyChartInst.destroy();
+  const DAYS=['SUN','MON','TUE','WED','THU','FRI','SAT'];
+  const today=new Date().getDay();
+  const labels=weekData.slice(0,7).map((p,i)=>p.day||(i===0?'TODAY':DAYS[(today+i)%7]));
+  const vals=weekData.slice(0,7).map(p=>parseFloat(p.total_waste_kg||p.predicted_waste_kg||0));
+  const ctx=document.getElementById('weeklyChart').getContext('2d');
+  weeklyChartInst=new Chart(ctx,{type:'bar',data:{labels,datasets:[{label:'Predicted Waste',data:vals,backgroundColor:vals.map((_,i)=>i===0?'rgba(0,255,136,0.9)':'rgba(0,255,136,0.35)'),borderColor:'rgba(0,255,136,0.7)',borderWidth:2,borderRadius:8,borderSkipped:false}]},
+  options:{responsive:true,maintainAspectRatio:false,animation:{duration:1400,easing:'easeOutBounce'},plugins:{legend:{display:false},tooltip:{backgroundColor:'#111c16',borderColor:'rgba(0,255,136,0.3)',borderWidth:1,titleColor:'#00ff88',bodyColor:'#e8f5ee',callbacks:{label:c=>` ${c.parsed.y.toFixed(1)} kg`}}},scales:{x:{grid:{color:'rgba(255,255,255,0.03)'},ticks:{color:'#5a8a6e',font:{family:'Space Mono',size:10}}},y:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#5a8a6e',font:{size:10},callback:v=>v+' kg'}}}}});
+
+  document.getElementById('weekly-table').innerHTML = `<table class="table"><tr><th>Day</th><th>Predicted Waste</th><th>Trend</th><th>Action</th></tr>` +
+  vals.map((v,i)=>{
+    const bar = Math.round((v/Math.max(...vals))*100);
+    const col=bar>70?'var(--red)':bar>40?'var(--amber)':'var(--green)';
+    return `<tr><td><strong>${labels[i]}</strong></td><td style="font-family:'Space Mono';color:${col}">${v.toFixed(1)} kg</td><td><div class="prog-bar" style="width:120px"><div class="prog-fill" style="width:${bar}%;background:${col}"></div></div></td><td><span class="badge ${bar>70?'b-red':bar>40?'b-amber':'b-green'}">${bar>70?'REDUCE ORDER':bar>40?'MONITOR':'NORMAL'}</span></td></tr>`;
+  }).join('')+'</table>';
+}
+
+// ── ALERTS ──
+function renderAlerts(preds, waste, risk) {
+  const top = preds[0]||{};
+  const temp = weatherData.temperature||weatherData.temp||16;
+  const alerts = [
+    {type:'red',icon:'🚨',title:`Highest Waste: ${top.item||'--'}`,sub:`${top.predicted_waste_kg||'--'} kg predicted. Reduce order to ${top.recommended_order||'--'} kg to save ₹${top.cost_saving||0}`},
+    {type: temp>30?'amber':'green', icon:'🌡️', title:`Temperature: ${temp}°C`, sub:temp>30?'High heat accelerates spoilage — refrigerate all perishables now':'Temperature normal — standard protocols apply'},
+    {type: risk==='HIGH'?'red':risk==='MED'?'amber':'green', icon:'⚠️', title:`Risk Level: ${risk}`, sub:`Overall waste risk today is ${risk}. ${risk!=='LOW'?'Follow all recommended order quantities.':'Good day — minimal waste expected.'}`},
+    {type:'green',icon:'💰',title:`Savings: ₹${preds.reduce((s,p)=>s+(p.cost_saving||0),0).toFixed(0)} available`,sub:'Follow recommended order quantities to achieve maximum savings today'}
+  ];
+  const html = alerts.map(a=>`<div class="alert ${a.type}"><div class="alert-icon">${a.icon}</div><div><div class="alert-title">${a.title}</div><div class="alert-sub">${a.sub}</div></div></div>`).join('');
+  document.getElementById('d-alerts').innerHTML = alerts.slice(0,3).map(a=>`<div class="alert ${a.type}"><div class="alert-icon">${a.icon}</div><div><div class="alert-title">${a.title}</div><div class="alert-sub">${a.sub}</div></div></div>`).join('');
+  if(document.getElementById('full-alerts')) document.getElementById('full-alerts').innerHTML = html;
+  document.getElementById('alert-count').textContent = alerts.filter(a=>a.type==='red').length + ' urgent';
+}
+
+// ── ORDER TABLE ──
+function renderOrders(preds) {
+  if(!preds.length) return;
+  const max=Math.max(...preds.map(p=>p.predicted_waste_kg));
+  let high=0,med=0,low=0,totalSaving=0;
+  const rows = preds.map(p=>{
+    const pct=Math.round((p.predicted_waste_kg/max)*100);
+    const priority=pct>70?'HIGH':pct>40?'MED':'LOW';
+    const pcls=pct>70?'b-red':pct>40?'b-amber':'b-green';
+    const col=pct>70?'var(--red)':pct>40?'var(--amber)':'var(--green)';
+    if(pct>70)high++;else if(pct>40)med++;else low++;
+    totalSaving+=p.cost_saving||0;
+    const confirmed = confirmedOrders[p.item];
+    const displayQty = confirmed||p.recommended_order;
+    return `<tr class="clickable" onclick='editOrder(${JSON.stringify(p)})'>
+      <td><strong>${p.item}</strong></td>
+      <td style="font-family:'Space Mono';font-size:12px;color:var(--muted)">${p.baseline_waste_kg} kg</td>
+      <td style="font-family:'Space Mono';font-size:12px;color:${col}">${p.predicted_waste_kg} kg</td>
+      <td style="font-family:'Space Mono';font-size:12px;color:var(--green);font-weight:700">${displayQty} kg${confirmed?'<span style="font-size:9px;color:var(--amber);margin-left:4px">✏️edited</span>':''}</td>
+      <td style="font-family:'Space Mono';font-size:12px;color:var(--green)">₹${p.cost_saving}</td>
+      <td><span class="badge ${pcls}">${priority}</span></td>
+    </tr>`;
+  }).join('');
+  document.getElementById('orders-table').innerHTML = `<table class="table"><tr><th>Item</th><th>Baseline</th><th>Predicted Waste</th><th>Recommended Order</th><th>Saving</th><th>Priority</th></tr>${rows}</table>`;
+  document.getElementById('ord-saving').textContent = '₹'+totalSaving.toFixed(0);
+  document.getElementById('ord-high').textContent = high;
+
+  // Order chart
+  if(ordChartInst) ordChartInst.destroy();
+  const ctx=document.getElementById('ordChart').getContext('2d');
+  const top5=preds.slice(0,5);
+  ordChartInst=new Chart(ctx,{type:'bar',data:{labels:top5.map(p=>p.item),datasets:[{label:'Predicted Waste',data:top5.map(p=>p.predicted_waste_kg),backgroundColor:'rgba(255,68,68,0.5)',borderColor:'#ff4444',borderWidth:1,borderRadius:4},{label:'Recommended Order',data:top5.map(p=>p.recommended_order),backgroundColor:'rgba(0,255,136,0.5)',borderColor:'#00ff88',borderWidth:1,borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,animation:{duration:900},plugins:{legend:{labels:{color:'#5a8a6e',font:{family:'DM Sans',size:9}}},tooltip:{backgroundColor:'#111c16',borderColor:'rgba(0,255,136,0.3)',borderWidth:1,titleColor:'#00ff88',bodyColor:'#e8f5ee'}},scales:{x:{grid:{display:false},ticks:{color:'#5a8a6e',font:{size:9}}},y:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#5a8a6e',font:{size:9},callback:v=>v+'kg'}}}}});
+}
+
+function editOrder(p) {
+  if(typeof p==='string') p=JSON.parse(p);
+  currentOrderItem = p;
+  document.getElementById('om-item').value = p.item;
+  document.getElementById('om-waste').value = p.predicted_waste_kg+' kg';
+  document.getElementById('om-recommended').value = p.recommended_order+' kg';
+  document.getElementById('om-custom').value = confirmedOrders[p.item]||p.recommended_order;
+  document.getElementById('om-reason').value = '';
+  document.getElementById('order-modal').classList.add('open');
+}
+
+function saveOrderEdit() {
+  if(!currentOrderItem) return;
+  const qty = parseFloat(document.getElementById('om-custom').value);
+  if(isNaN(qty)||qty<=0) { toast('Please enter a valid quantity','error'); return; }
+  confirmedOrders[currentOrderItem.item] = qty;
+  localStorage.setItem('confirmedOrders', JSON.stringify(confirmedOrders));
+  document.getElementById('order-modal').classList.remove('open');
+  renderOrders(allPreds);
+  toast(`Order confirmed: ${currentOrderItem.item} → ${qty} kg`);
+}
+
+function confirmAllOrders() {
+  allPreds.forEach(p => { if(!confirmedOrders[p.item]) confirmedOrders[p.item]=p.recommended_order; });
+  localStorage.setItem('confirmedOrders', JSON.stringify(confirmedOrders));
+  renderOrders(allPreds);
+  toast('All orders confirmed! ✅');
+}
+
+function printOrders() { window.print(); }
+
+// ── WASTE LOG FORM ──
+function renderLogForm() {
+  document.getElementById('log-date').value = new Date().toISOString().split('T')[0];
+  if(!allPreds.length) return;
+  document.getElementById('log-items-form').innerHTML = `<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">` +
+    allPreds.map(p=>`<div class="form-group" style="margin-bottom:0">
+      <label class="form-label">${p.item} (predicted: ${p.predicted_waste_kg} kg)</label>
+      <input type="number" class="form-input" id="log-${p.item.replace(/\s/g,'_')}" placeholder="0.0" step="0.1" min="0"/>
+    </div>`).join('') + '</div>';
+}
+
+function clearLogForm() {
+  allPreds.forEach(p=>{ const el=document.getElementById('log-'+p.item.replace(/\s/g,'_')); if(el) el.value=''; });
+  document.getElementById('log-notes').value='';
+}
+
+function saveWasteLog() {
+  const date = document.getElementById('log-date').value;
+  if(!date) { toast('Please select a date','error'); return; }
+  const items = {};
+  let hasAny = false;
+  allPreds.forEach(p=>{
+    const el=document.getElementById('log-'+p.item.replace(/\s/g,'_'));
+    if(el&&el.value!=='') { items[p.item]=parseFloat(el.value)||0; hasAny=true; }
+  });
+  if(!hasAny) { toast('Please enter at least one waste value','error'); return; }
+  const totalActual = Object.values(items).reduce((a,b)=>a+b,0);
+  const totalPredicted = parseFloat(todayData.total_waste_kg||0);
+  const entry = { date, items, notes:document.getElementById('log-notes').value, totalActual:totalActual.toFixed(1), totalPredicted, loggedAt:new Date().toISOString() };
+  const existing = wasteLog.findIndex(l=>l.date===date);
+  if(existing>=0) wasteLog[existing]=entry; else wasteLog.unshift(entry);
+  localStorage.setItem('wasteLog', JSON.stringify(wasteLog));
+  toast(`Waste log saved for ${date}! Actual: ${totalActual.toFixed(1)} kg`);
+  clearLogForm();
+  renderLogHistory();
+  renderAccuracyChart();
+}
+
+function clearAllLogs() {
+  if(!confirm('Clear all waste logs?')) return;
+  wasteLog=[]; localStorage.setItem('wasteLog','[]');
+  renderLogHistory(); toast('All logs cleared');
+}
+
+function renderLogHistory() {
+  const el=document.getElementById('log-history');
+  if(!wasteLog.length) { el.innerHTML='<div style="color:var(--muted);font-size:12px;padding:16px;text-align:center">No logs yet</div>'; return; }
+  el.innerHTML = wasteLog.slice(0,10).map(l=>{
+    const diff = l.totalActual-l.totalPredicted;
+    const col = Math.abs(diff)<2?'var(--green)':diff>0?'var(--red)':'var(--amber)';
+    return `<div class="log-item">
+      <div style="font-family:'Space Mono';font-size:11px;color:var(--muted);flex-shrink:0">${l.date}</div>
+      <div style="flex:1;padding:0 10px"><div style="font-size:13px;font-weight:500">Actual: ${l.totalActual} kg</div><div style="font-size:11px;color:var(--muted)">Predicted: ${l.totalPredicted} kg · ${l.notes||'No notes'}</div></div>
+      <span style="font-family:'Space Mono';font-size:11px;color:${col}">${diff>0?'+':''}${diff.toFixed(1)}kg</span>
+    </div>`;
+  }).join('');
+  renderAccuracyChart();
+}
+
+function renderAccuracyChart() {
+  if(wasteLog.length<2) return;
+  document.getElementById('accuracy-card').style.display='block';
+  if(accChartInst) accChartInst.destroy();
+  const recent=wasteLog.slice(0,7).reverse();
+  const ctx=document.getElementById('accChart').getContext('2d');
+  accChartInst=new Chart(ctx,{type:'line',data:{labels:recent.map(l=>l.date.slice(5)),datasets:[{label:'Predicted',data:recent.map(l=>l.totalPredicted),borderColor:'#4488ff',backgroundColor:'rgba(68,136,255,0.1)',fill:true,tension:0.4,pointRadius:4},{label:'Actual',data:recent.map(l=>parseFloat(l.totalActual)),borderColor:'#00ff88',backgroundColor:'rgba(0,255,136,0.1)',fill:true,tension:0.4,pointRadius:4}]},options:{responsive:true,maintainAspectRatio:false,animation:{duration:800},plugins:{legend:{labels:{color:'#5a8a6e',font:{family:'DM Sans',size:11}}},tooltip:{backgroundColor:'#111c16',borderColor:'rgba(0,255,136,0.3)',borderWidth:1,titleColor:'#00ff88',bodyColor:'#e8f5ee'}},scales:{x:{grid:{color:'rgba(255,255,255,0.03)'},ticks:{color:'#5a8a6e',font:{size:10}}},y:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#5a8a6e',font:{size:10},callback:v=>v+' kg'}}}}});
+}
+
+// ── INVENTORY ──
+function renderInventoryForm() {
+  if(!allPreds.length) return;
+  document.getElementById('inventory-form').innerHTML = `<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">` +
+    allPreds.map(p=>`<div class="form-group" style="margin-bottom:0">
+      <label class="form-label">${p.item} — Current Stock (kg)</label>
+      <input type="number" class="form-input" id="inv-${p.item.replace(/\s/g,'_')}" value="${inventoryData[p.item]||''}" placeholder="0.0" step="0.1" min="0"/>
+    </div>`).join('') + '</div>';
+}
+
+function saveInventory() {
+  allPreds.forEach(p=>{
+    const el=document.getElementById('inv-'+p.item.replace(/\s/g,'_'));
+    if(el&&el.value!=='') inventoryData[p.item]=parseFloat(el.value)||0;
+  });
+  localStorage.setItem('inventory',JSON.stringify(inventoryData));
+  renderStockAnalysis();
+  toast('Inventory saved!');
+}
+
+function renderStockAnalysis() {
+  if(!Object.keys(inventoryData).length) return;
+  const html = allPreds.filter(p=>inventoryData[p.item]!==undefined).map(p=>{
+    const stock=inventoryData[p.item]||0;
+    const need=p.recommended_order||0;
+    const diff=stock-need;
+    const col=diff>2?'var(--amber)':diff<-1?'var(--red)':'var(--green)';
+    const msg=diff>2?`⚠️ Excess: ${diff.toFixed(1)}kg extra`:diff<-1?`❌ Short: Need ${Math.abs(diff).toFixed(1)}kg more`:`✅ Good stock level`;
+    return `<div class="log-item"><span style="font-size:13px;font-weight:500;flex-shrink:0;width:90px">${p.item}</span><div style="flex:1;padding:0 10px"><div class="prog-bar"><div class="prog-fill" style="width:${Math.min(100,Math.round((stock/Math.max(stock,need))*100))}%;background:${col}"></div></div></div><div style="text-align:right"><div style="font-family:'Space Mono';font-size:11px;color:${col}">${stock}kg stock</div><div style="font-size:10px;color:var(--muted)">${msg}</div></div></div>`;
+  }).join('');
+  document.getElementById('stock-analysis').innerHTML = html||'<div style="color:var(--muted);font-size:12px">Save inventory to see analysis</div>';
+}
+
+// ── CSV UPLOAD ──
+let selectedFile = null;
+function handleFileSelect(e) { selectedFile=e.target.files[0]; showFilePreview(selectedFile); }
+function handleDrop(e) { e.preventDefault(); selectedFile=e.dataTransfer.files[0]; showFilePreview(selectedFile); }
+function showFilePreview(file) {
+  if(!file) return;
+  document.getElementById('upload-preview').style.display='block';
+  document.getElementById('upload-preview').innerHTML=`📄 <strong>${file.name}</strong> — ${(file.size/1024).toFixed(1)} KB — Ready to upload`;
+  document.getElementById('upload-btn').disabled=false;
+}
+async function uploadCSV() {
+  if(!selectedFile) return;
+  const btn=document.getElementById('upload-btn');
+  btn.innerHTML='<span class="spinner"></span> Uploading...'; btn.disabled=true;
+  try {
+    const formData=new FormData();
+    formData.append('file',selectedFile);
+    const r=await fetch(API+'/upload-csv',{method:'POST',body:formData});
+    if(!r.ok) throw new Error('Upload failed');
+    const d=await r.json();
+    toast('CSV uploaded! Model retraining... Refresh in 5 seconds.');
+    document.getElementById('upload-preview').innerHTML=`✅ Uploaded! ${d.message||'Model will retrain with new data.'}`;
+    setTimeout(()=>loadAll(),5000);
+  } catch(e) { toast('Upload failed — check server connection','error'); }
+  btn.innerHTML='📤 Upload to Server'; btn.disabled=false;
+}
+
+// ── HISTORY ──
+function renderHistory() {
+  if(!wasteLog.length) return;
+  document.getElementById('history-table').innerHTML=`<table class="table"><tr><th>Date</th><th>Actual Waste</th><th>Predicted</th><th>Accuracy</th><th>Notes</th></tr>`+
+  wasteLog.map(l=>{
+    const acc=l.totalPredicted>0?Math.round((1-Math.abs(l.totalActual-l.totalPredicted)/l.totalPredicted)*100):0;
+    const col=acc>85?'var(--green)':acc>70?'var(--amber)':'var(--red)';
+    return `<tr><td style="font-family:'Space Mono';font-size:12px">${l.date}</td><td style="color:var(--green);font-family:'Space Mono';font-size:12px">${l.totalActual} kg</td><td style="color:var(--muted);font-family:'Space Mono';font-size:12px">${l.totalPredicted} kg</td><td><span class="badge ${acc>85?'b-green':acc>70?'b-amber':'b-red'}">${acc}%</span></td><td style="font-size:12px;color:var(--muted)">${l.notes||'—'}</td></tr>`;
+  }).join('')+'</table>';
+  if(wasteLog.length>1) {
+    document.getElementById('hist-chart-card').style.display='block';
+    if(histChartInst) histChartInst.destroy();
+    const recent=wasteLog.slice(0,14).reverse();
+    const ctx=document.getElementById('histChart').getContext('2d');
+    histChartInst=new Chart(ctx,{type:'bar',data:{labels:recent.map(l=>l.date.slice(5)),datasets:[{label:'Predicted',data:recent.map(l=>l.totalPredicted),backgroundColor:'rgba(68,136,255,0.5)',borderColor:'#4488ff',borderWidth:1,borderRadius:4},{label:'Actual',data:recent.map(l=>parseFloat(l.totalActual)),backgroundColor:'rgba(0,255,136,0.5)',borderColor:'#00ff88',borderWidth:1,borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,animation:{duration:1000},plugins:{legend:{labels:{color:'#5a8a6e',font:{family:'DM Sans',size:11}}},tooltip:{backgroundColor:'#111c16',borderColor:'rgba(0,255,136,0.3)',borderWidth:1,titleColor:'#00ff88',bodyColor:'#e8f5ee'}},scales:{x:{grid:{display:false},ticks:{color:'#5a8a6e',font:{size:9}}},y:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#5a8a6e',font:{size:10},callback:v=>v+'kg'}}}}});
+  }
+}
+
+function filterHistory() { renderHistory(); }
+
+// ── IMPACT REPORT ──
+function renderImpact() {
+  const waste=todayData.total_waste_kg||'61.7';
+  const saving=allPreds.reduce((s,p)=>s+(p.cost_saving||0),0).toFixed(0);
+  const co2=(parseFloat(waste)*2.5).toFixed(1);
+  document.getElementById('imp-waste').textContent=waste;
+  document.getElementById('imp-saving').textContent='₹'+saving;
+  document.getElementById('imp-monthly').textContent='₹'+(saving*26).toLocaleString('en-IN');
+  document.getElementById('imp-co2').textContent=co2;
+  document.getElementById('impact-date').textContent='Generated: '+new Date().toLocaleString('en-IN');
+  if(allPreds.length) {
+    const max=Math.max(...allPreds.map(p=>p.predicted_waste_kg));
+    document.getElementById('imp-ingredients').innerHTML=`<table class="table"><tr><th>Item</th><th>Predicted Waste</th><th>Save</th><th>CO₂</th><th>Action</th></tr>`+
+    allPreds.map(p=>{
+      const pct=Math.round((p.predicted_waste_kg/max)*100);
+      const col=pct>70?'var(--red)':pct>40?'var(--amber)':'var(--green)';
+      return `<tr><td style="font-weight:500">${p.item}</td><td style="font-family:'Space Mono';font-size:12px;color:${col}">${p.predicted_waste_kg} kg</td><td style="font-family:'Space Mono';font-size:12px;color:var(--green)">₹${p.cost_saving}</td><td style="font-family:'Space Mono';font-size:12px;color:#44ddff">${(p.predicted_waste_kg*2.5).toFixed(1)} kg</td><td><span class="badge ${pct>70?'b-red':pct>40?'b-amber':'b-green'}">${pct>70?'REDUCE':pct>40?'MONITOR':'OK'}</span></td></tr>`;
+    }).join('')+'</table>';
+  }
+  document.getElementById('imp-deliverables').innerHTML=[
+    {d:'Waste prediction agent',done:true},
+    {d:'Order optimisation dashboard',done:true},
+    {d:'Demo with sample restaurant data',done:true},
+    {d:'Waste reduction impact report',done:true},
+    {d:'Sales & weather data ingestion',done:true},
+    {d:'Local events integration',done:true}
+  ].map(x=>`<div style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--border);font-size:12px">
+    <span style="color:var(--green);font-size:16px">${x.done?'✅':'⬜'}</span>
+    <span style="color:${x.done?'var(--text)':'var(--muted)'}">${x.d}</span>
+  </div>`).join('');
+}
+
+// ── DATE PREDICTION ──
+document.getElementById('pred-date').value = new Date().toISOString().split('T')[0];
+async function runPrediction() {
+  const d=document.getElementById('pred-date').value;
+  if(!d){toast('Please select a date','error');return;}
+  const btn=document.getElementById('pred-btn');
+  btn.innerHTML='<span class="spinner"></span>'; btn.disabled=true;
+  try {
+    let data; try{data=await get(`/predict/today?date=${d}`);}catch{data=await get('/predict/today');}
+    const waste=parseFloat(data.total_waste_kg||data.predicted_waste_kg||0).toFixed(1);
+    const preds=data.predictions||[];
+    const risk=data.risk_level||'MED';
+    document.getElementById('pred-waste').textContent=waste;
+    const dt=new Date(d+'T00:00:00');
+    document.getElementById('pred-date-label').textContent=dt.toLocaleDateString('en-IN',{weekday:'long',day:'numeric',month:'long',year:'numeric'})+' · '+preds.length+' ingredients tracked';
+    document.getElementById('pred-badge').innerHTML=`<span class="badge ${risk==='HIGH'?'b-red':risk==='LOW'?'b-green':'b-amber'}">${risk} RISK</span>`;
+    document.getElementById('pred-items').innerHTML=preds.slice(0,8).map(p=>`<div style="background:rgba(0,0,0,0.3);border:1px solid var(--border);border-radius:9px;padding:10px;cursor:pointer;transition:all 0.2s" onmouseenter="this.style.borderColor='var(--green)'" onmouseleave="this.style.borderColor='var(--border)'">
+      <div style="font-size:12px;font-weight:600;margin-bottom:3px">${p.item}</div>
+      <div style="font-family:'Space Mono';font-size:15px;color:var(--green)">${p.predicted_waste_kg}<span style="font-size:10px;color:var(--muted)"> kg</span></div>
+      <div style="font-size:10px;color:var(--muted);margin-top:2px">Order ${p.recommended_order}kg · Save ₹${p.cost_saving}</div>
+    </div>`).join('');
+    document.getElementById('pred-result').style.display='block';
+    toast('Prediction complete!');
+  } catch(e){toast('Prediction failed','error');}
+  btn.innerHTML='⚡ Run Prediction'; btn.disabled=false;
+}
+
+// ── AI CONTEXT ──
+function updateAIContext() {
+  const waste=todayData.total_waste_kg||'--';
+  const risk=todayData.risk_level||'--';
+  const temp=weatherData.temperature||weatherData.temp||'--';
+  const saving=allPreds.reduce((s,p)=>s+(p.cost_saving||0),0).toFixed(0);
+  document.getElementById('ai-context').innerHTML=`
+    Waste: <span style="color:var(--red)">${waste} kg</span><br>
+    Risk: <span style="color:var(--amber)">${risk}</span><br>
+    Temp: <span style="color:var(--amber)">${temp}°C</span><br>
+    Savings: <span style="color:var(--green)">₹${saving}</span><br>
+    Items: <span style="color:var(--green)">${allPreds.length} tracked</span><br>
+    Logs: <span style="color:var(--blue)">${wasteLog.length} entries</span>`;
+}
+
+// ── AI CHAT ──
+let chatHistory = [];
+function askQuick(q) { document.getElementById('chat-input').value=q; sendChat(); }
+async function sendChat() {
+  const input=document.getElementById('chat-input');
+  const msg=input.value.trim(); if(!msg) return;
+  const btn=document.getElementById('chat-send');
+  input.value=''; btn.disabled=true; btn.innerHTML='<span class="spinner" style="border-top-color:#0a0f0d"></span>';
+  addChatMsg(msg,'user');
+  const waste=todayData.total_waste_kg||'61.7';
+  const risk=todayData.risk_level||'MED';
+  const temp=weatherData.temperature||weatherData.temp||'16';
+  const humidity=weatherData.humidity||'65';
+  const topItems=allPreds.slice(0,5).map(p=>`${p.item}: waste ${p.predicted_waste_kg}kg, recommend ${p.recommended_order}kg, save ₹${p.cost_saving}`).join('; ');
+  const totalSaving=allPreds.reduce((s,p)=>s+(p.cost_saving||0),0).toFixed(0);
+  const logSummary=wasteLog.length?`Last log: ${wasteLog[0].date} actual=${wasteLog[0].totalActual}kg vs predicted=${wasteLog[0].totalPredicted}kg`:'No waste logs yet';
+  const systemCtx=`You are KitchenZero AI, a smart kitchen waste management assistant for a restaurant in Hyderabad, India.
+
+Current data:
+- Today's predicted waste: ${waste} kg (Risk: ${risk})
+- Weather: ${temp}°C, ${humidity}% humidity
+- Top ingredients: ${topItems}
+- Total savings potential: ₹${totalSaving}
+- Waste history: ${logSummary}
+- Events nearby: ${eventsData.slice(0,2).map(e=>e.name||'Event').join(', ')||'None'}
+
+Be helpful, specific, and practical. Use actual numbers from the data. Keep responses concise (3-6 sentences). You're talking to a restaurant manager.`;
+  chatHistory.push({role:'user',content:msg});
+  const thinkingEl=addChatMsg('Thinking...','ai',true);
+  try {
+    const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:400,system:systemCtx,messages:chatHistory})});
+    const data=await res.json();
+    const reply=data.content?.[0]?.text||'Sorry, I could not process that.';
+    chatHistory.push({role:'assistant',content:reply});
+    thinkingEl.innerHTML=`<div class="ai-label">KITCHENZERO AI</div>${reply}`;
+  } catch(e) {
+    // Fallback answers
+    let reply='I\'m analysing your kitchen data...';
+    if(msg.toLowerCase().includes('waste')||msg.toLowerCase().includes('highest')) reply=`Your highest waste item today is ${allPreds[0]?.item||'Chicken'} at ${allPreds[0]?.predicted_waste_kg||'--'} kg. Reduce order to ${allPreds[0]?.recommended_order||'--'} kg to save ₹${allPreds[0]?.cost_saving||0}.`;
+    else if(msg.toLowerCase().includes('saving')) reply=`Total savings opportunity today: ₹${totalSaving}. Top 3 items to target: ${allPreds.slice(0,3).map(p=>p.item).join(', ')}. Follow all recommended order quantities strictly.`;
+    else if(msg.toLowerCase().includes('weather')) reply=`At ${temp}°C and ${humidity}% humidity, spoilage risk is ${temp>30?'HIGH':'MODERATE'}. ${temp>30?'Refrigerate all perishables immediately and cut prep batch sizes by 20%.':'Standard food safety protocols apply.'}`;
+    else reply=`Based on today's data: ${waste} kg predicted waste, ₹${totalSaving} savings potential. Your biggest opportunity is optimising ${allPreds[0]?.item||'ingredient'} orders. Is there a specific ingredient or metric you'd like to know more about?`;
+    thinkingEl.innerHTML=`<div class="ai-label">KITCHENZERO AI</div>${reply}`;
+    chatHistory.push({role:'assistant',content:reply});
+  }
+  document.getElementById('chat-msgs').scrollTop=9999;
+  btn.disabled=false; btn.innerHTML='Send ↗';
+}
+
+function addChatMsg(text, who, isTemp=false) {
+  const el=document.createElement('div');
+  el.className=`chat-msg ${who}`;
+  el.innerHTML=who==='ai'?`<div class="ai-label">KITCHENZERO AI</div>${text}`:text;
+  document.getElementById('chat-msgs').appendChild(el);
+  document.getElementById('chat-msgs').scrollTop=9999;
+  return el;
+}
+
+// ── DASHBOARD META ──
+async function loadDash() {
+  try {
+    const d=await get('/dashboard');
+    if(d.city) document.getElementById('city-info').textContent='📍 '+d.city+' · Port 8000';
+  } catch(e){}
+}
+
+async function loadAll() {
+  document.getElementById('last-sync').textContent='Syncing...';
+  await Promise.all([loadDash(),loadToday(),loadWeather(),loadEvents(),loadWeek()]);
+  renderLogHistory();
+  updateAIContext();
+}
+
+// ── INIT ──
+loadAll();
+setInterval(loadAll,60000);
+document.getElementById('log-date').value=new Date().toISOString().split('T')[0];
+document.getElementById('hist-month').value=new Date().toISOString().slice(0,7);
+</script>
+</body>
+</html>
