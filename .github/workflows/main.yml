@@ -1,0 +1,15 @@
+name: DevOps Demo
+
+on:
+  push:
+
+jobs:
+  demo:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Print Welcome Message
+        run: |
+          echo "Hello World!"
+          echo "Welcome to Mobile Banking DevOps Project"
+          echo "GitHub Actions is working successfully!"
